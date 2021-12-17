@@ -1,0 +1,1 @@
+forfiles /p "c:\Windows" /c "cmd /c if @fsize gtr 2097152 copy @path \\%computername%\temp /z /y"

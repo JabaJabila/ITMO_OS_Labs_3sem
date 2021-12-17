@@ -1,0 +1,12 @@
+**************************task.bat**************************
+cd c:\LAB6\task2
+net share temp="C:\LAB6\temp"
+net use * \\%computername%\temp
+schtasks /create /f /tn CopyTask /tr c:\LAB6\task2\copy.exe /sc minute
+
+**************************start_copy.bat**************************
+forfiles /p "c:\Windows" /c "cmd /c if @fsize gtr 2097152 copy @path \\%computername%\temp /z /y"
+
+**************************kill.bat**************************
+taskkill /im copy.exe
+fc c:\LAB6\temp\explorer.exe c:\Windows\explorer.exe > diff.txt
