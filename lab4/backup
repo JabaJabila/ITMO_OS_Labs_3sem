@@ -1,0 +1,75 @@
+#!/bin/bash
+
+if [[ ! -f ~/backup-report ]]
+then
+    touch ~/backup-report
+fi
+if [[ ! -d ~/source ]]
+then
+    echo "Source directory not found!"
+    exit 1
+fi
+
+todaySec=$(date +%s)
+todayDate=$(date +"%F")
+lastBackupDate=$(ls ~ | grep "^Backup-" | sed 's/Backup-//' | sort -nrk 1 | head -1)
+if [[ ! -z $lastBackupDate ]]
+then
+    lastDateSec=$(date -d $lastBackupDate +%s)
+    diff=$(echo "(${todaySec} - ${lastDateSec}) / 86400" | bc)
+else
+    diff=8
+fi
+
+if [[ diff -gt 7 ]]
+then
+    mkdir ~/Backup-$todayDate
+    echo "Created new directory: Backup-$todayDate at $(date +%c) with files:" >> ~/backup-report
+    for filename in $(ls ~/source)
+    do
+	if [[ !  -d ~/source/$filename ]]
+	then
+	    cp ~/source/$filename ~/Backup-$todayDate
+	    echo $filename >> ~/backup-report
+	fi
+    done
+else
+    message="Changes in Backup-$lastBackupDate at $(date +%c)"
+    added="Added files:"
+    changed="Updated files:"
+    for filename in $(ls ~/source)
+    do
+	if [[ ! -d ~/source/$filename ]]
+	then
+	    if [[ ! -f ~/Backup-$lastBackupDate/$filename ]]
+	    then
+		cp ~/source/$filename ~/Backup-$lastBackupDate
+		added="${added}\n${filename}"
+	    else
+		oldSize=$(wc -c ~/Backup-$lastBackupDate/$filename | awk '{print $1}')
+		newSize=$(wc -c ~/source/$filename | awk '{print $1}')
+		if [[ $oldSize -ne $newSize ]]
+		then
+		    mv ~/Backup-$lastBackupDate/$filename ~/Backup-$lastBackupDate/$filename.$lastBackupDate
+		    cp ~/source/$filename ~/Backup-$lastBackupDate
+		    changed="${changed}\n${filename} -> previous version: ${filename}.${lastBackupDate}"
+		fi
+	    fi
+	fi
+    done
+    if [ $(echo -e "${added}" | wc -l) -le 1 ] && [ $(echo -e "${changed}" | wc -l) -le 1 ]
+    then
+	echo "No changes in Backup-$lastBackupDate at $(date +%c)" >> ~/backup-report
+    else
+	echo "${message}" >> ~/backup-report
+	if [[ $(echo -e "${added}" | wc -l) -gt 1 ]]
+	then
+	    echo -e "${added}" >> ~/backup-report
+	fi
+
+	if [[ $(echo -e "${changed}" | wc -l) -gt 1 ]]
+	then
+	    echo -e "${changed}" >> ~/backup-report
+	fi
+    fi
+fi

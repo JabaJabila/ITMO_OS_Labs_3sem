@@ -1,0 +1,17 @@
+#!/bin/bash
+echo "" > top5_data
+echo "" > membash_data
+echo "" > mem_data
+echo "" > swap_data
+
+while true;
+do
+    sec=$(date +%s)
+    top -bn1 > .tmp
+    cat .tmp | sed -n '4p' | awk -v s="$sec" '{print s,$6}' >> mem_data
+    cat .tmp | sed -n '5p' | awk -v s="$sec" '{print s,$5}' >> swap_data
+    cat .tmp | head -12 | tail -5 >> top5_data
+    echo "--------" >> top5_data
+    cat .tmp | grep "mem[2]*.bash" >> membash_data
+done
+

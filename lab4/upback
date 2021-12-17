@@ -1,0 +1,22 @@
+#!/bin/bash
+
+lastBackupDate=$(ls ~ | grep "^Backup-" | sed 's/Backup-//' | sort -nrk 1 | head -1)
+if [[ -z $lastBackupDate ]]
+then
+    echo "No backups found"
+    exit 0
+fi
+
+if [[ ! -d ~/restore ]]
+then
+    mkdir ~/restore
+fi
+
+for filename in $(ls ~/Backup-$lastBackupDate | grep -Ev ".\.[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}$")
+do
+    if [[ -f ~/restore/$filename ]]
+    then
+	rm ~/restore/$filename
+    fi
+    cp ~/Backup-$lastBackupDate/$filename ~/restore/$filename
+done
